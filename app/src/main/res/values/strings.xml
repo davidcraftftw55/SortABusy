@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">SortABusy</string>
     <string name="button">Button</string>
-    <string name="button_desc">Draggable Button</string>
+    <string name="button_desc">Demo</string>
 </resources>
