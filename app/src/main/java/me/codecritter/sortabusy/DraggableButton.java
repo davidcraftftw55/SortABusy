@@ -25,6 +25,10 @@ public class DraggableButton extends AppCompatButton {
      */
     private float dY;
     /**
+     * Height of button before user started dragging it
+     */
+    private float origHeight;
+    /**
      * Difference from top of button to tap location
      */
     private float tapDy;
@@ -67,6 +71,7 @@ public class DraggableButton extends AppCompatButton {
                 float tapDx = event.getRawX() - coords[0];
                 dY = coords[1] - getY();
                 tapDy = event.getRawY() - coords[1];
+                origHeight = getHeight();
 
                 if (tapDx < getWidth() * 0.33) {
                     dragType = DRAG_TYPE.RESIZE_TOP;
@@ -97,15 +102,10 @@ public class DraggableButton extends AppCompatButton {
                         setY(event.getRawY() - dY - tapDy);
                         break;
                     case RESIZE_BOT:
-                        heightIncrease = Math.round(event.getRawY() - dY - tapDy - getY());
-                        // FIXME stretches perpetually
-                        //  (it seems that the height increases/decreases by distance from original touch)
-                        //  (like it uses velocity instead of positioning
-
-
-                        if (getHeight() + heightIncrease > 200) {
+                        int newHeight = Math.round(event.getRawY() - dY - tapDy + origHeight - getY());
+                        if (newHeight > 200) {
                             ViewGroup.LayoutParams params = getLayoutParams();
-                            params.height += heightIncrease;
+                            params.height = newHeight;
                             setLayoutParams(params);
                         }
                         break;
