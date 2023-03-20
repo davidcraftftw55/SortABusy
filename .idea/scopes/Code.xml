@@ -1,3 +1,3 @@
 <component name="DependencyValidationManager">
-  <scope name="Code" pattern="file[SortABusy.app.main]:java//*||file[SortABusy.app.main]:res//*||file[SortABusy.app.main]:AndroidManifest.xml" />
+  <scope name="Code" pattern="(file[SortABusy.app.main]:java//*||file[SortABusy.app.main]:res//*||file[SortABusy.app.main]:AndroidManifest.xml)&amp;&amp;!file[SortABusy.app.main]:res/mipmap-anydpi-v26//*&amp;&amp;!file[SortABusy.app.main]:res/mipmap-anydpi-v33//*&amp;&amp;!file[SortABusy.app.main]:res/mipmap-hdpi//*&amp;&amp;!file[SortABusy.app.main]:res/mipmap-mdpi//*&amp;&amp;!file[SortABusy.app.main]:res/mipmap-xhdpi//*&amp;&amp;!file[SortABusy.app.main]:res/mipmap-xxhdpi//*&amp;&amp;!file[SortABusy.app.main]:res/mipmap-xxxhdpi//*&amp;&amp;!file[SortABusy.app.main]:res/values-night//*" />
 </component>

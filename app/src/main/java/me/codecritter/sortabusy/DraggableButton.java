@@ -15,6 +15,10 @@ import androidx.appcompat.widget.AppCompatButton;
 public class DraggableButton extends AppCompatButton {
 
     private static final int MIN_HEIGHT = 200;
+    /**
+     * If a button is held for more milliseconds than this, it's a drag not a click
+     */
+    private static final long CLICK_TIME = 100L; // milliseconds
 
     private enum DRAG_TYPE { MOVE, RESIZE_TOP, RESIZE_BOT }
 
@@ -83,37 +87,39 @@ public class DraggableButton extends AppCompatButton {
 
                 break;
             case MotionEvent.ACTION_MOVE:
-                isClick = false;
+                if (!isClick || event.getEventTime() - event.getDownTime() > 100) {
+                    isClick = false;
 
-                switch(dragType) {
-                    case RESIZE_TOP:
-                        float newTop = event.getRawY() - dY - tapDy;
-                        int heightIncrease = Math.round(getY() - newTop);
+                    switch (dragType) {
+                        case RESIZE_TOP:
+                            float newTop = event.getRawY() - dY - tapDy;
+                            int heightIncrease = Math.round(getY() - newTop);
 
-                        if (getHeight() + heightIncrease > MIN_HEIGHT) {
-                            setY(newTop);
+                            if (getHeight() + heightIncrease > MIN_HEIGHT) {
+                                setY(newTop);
 
-                            ViewGroup.LayoutParams params = getLayoutParams();
-                            params.height += heightIncrease;
-                            setLayoutParams(params);
-                        }
-                        break;
-                    case MOVE:
-                        setY(event.getRawY() - dY - tapDy);
-                        break;
-                    case RESIZE_BOT:
-                        int newHeight = Math.round(event.getRawY() - dY - tapDy + origHeight - getY());
-                        if (newHeight > 200) {
-                            ViewGroup.LayoutParams params = getLayoutParams();
-                            params.height = newHeight;
-                            setLayoutParams(params);
-                        }
-                        break;
+                                ViewGroup.LayoutParams params = getLayoutParams();
+                                params.height += heightIncrease;
+                                setLayoutParams(params);
+                            }
+                            break;
+                        case MOVE:
+                            setY(event.getRawY() - dY - tapDy);
+                            break;
+                        case RESIZE_BOT:
+                            int newHeight = Math.round(event.getRawY() - dY - tapDy + origHeight - getY());
+                            if (newHeight > 200) {
+                                ViewGroup.LayoutParams params = getLayoutParams();
+                                params.height = newHeight;
+                                setLayoutParams(params);
+                            }
+                            break;
+                    }
                 }
 
                 break;
             case MotionEvent.ACTION_UP:
-                if (isClick) {
+                if (isClick || event.getEventTime() - event.getDownTime() < CLICK_TIME) {
                     performClick();
                 }
                 break;

@@ -1,6 +1,7 @@
 package me.codecritter.sortabusy;
 
 import android.os.Bundle;
+import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -15,6 +16,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        findViewById(R.id.button).setX(350);
+        Button button = findViewById(R.id.button);
+        button.setX(350);
+        button.setOnClickListener(view ->
+                CalendarHelper.getInstance(this).debugMethod(this, findViewById(R.id.textView)));
     }
 }
