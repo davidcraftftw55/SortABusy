@@ -1,12 +1,11 @@
 package me.codecritter.sortabusy;
 
 import android.content.Context;
-import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
+import android.widget.ScrollView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatButton;
 
 /**
@@ -14,13 +13,18 @@ import androidx.appcompat.widget.AppCompatButton;
  */
 public class DraggableButton extends AppCompatButton {
 
-    private static final int MIN_HEIGHT = 200;
     /**
      * If a button is held for more milliseconds than this, it's a drag not a click
      */
     private static final long CLICK_TIME = 100L; // milliseconds
 
     private enum DRAG_TYPE { MOVE, RESIZE_TOP, RESIZE_BOT }
+
+    private final ScrollView parent;
+    private final int PARENT_HEIGHT;
+    private final int PARENT_WIDTH;
+    private final int MIN_HEIGHT;
+
 
     private boolean isClick;
     private DRAG_TYPE dragType;
@@ -40,36 +44,26 @@ public class DraggableButton extends AppCompatButton {
     /**
      * Constructs this button (typically only used by code)
      * @param context context needed
+     * @param parentWidth width of parent view
+     * @param parentHeight height of parent view
+     * @param minHeight minimum height of this button
+     *                  (should be 15 minutes, or 1/4 of the space between lines)
      */
-    public DraggableButton(@NonNull Context context) {
+    public DraggableButton(@NonNull Context context, ScrollView parent, int parentWidth, int parentHeight, int minHeight) {
         super(context);
-    }
 
-    /**
-     * Constructs this button (typically used by LayoutInflaters)
-     * @param context context needed
-     * @param attrs set of attributes assigned by the layout file
-     */
-    public DraggableButton(@NonNull Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
-    }
-
-    /**
-     * Constructs this button (typically used by LayoutInflaters), with a specified default style
-     * @param context context needed
-     * @param attrs set of attributes assigned by the layout file
-     * @param defStyleAttr resource id for a default style (0 to keep current default style)
-     */
-    public DraggableButton(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
+        this.parent = parent;
+        PARENT_WIDTH = parentWidth;
+        PARENT_HEIGHT = parentHeight;
+        MIN_HEIGHT = minHeight;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                parent.requestDisallowInterceptTouchEvent(true);
                 isClick = true;
-
                 int[] coords = new int[2];
                 getLocationOnScreen(coords);
                 float tapDx = event.getRawX() - coords[0];
@@ -84,18 +78,15 @@ public class DraggableButton extends AppCompatButton {
                 } else {
                     dragType = DRAG_TYPE.RESIZE_BOT;
                 }
-
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (!isClick || event.getEventTime() - event.getDownTime() > 100) {
                     isClick = false;
-
                     switch (dragType) {
                         case RESIZE_TOP:
                             float newTop = event.getRawY() - dY - tapDy;
                             int heightIncrease = Math.round(getY() - newTop);
-
-                            if (getHeight() + heightIncrease > MIN_HEIGHT) {
+                            if (getHeight() + heightIncrease > MIN_HEIGHT && newTop > 0) {
                                 setY(newTop);
 
                                 ViewGroup.LayoutParams params = getLayoutParams();
@@ -104,11 +95,14 @@ public class DraggableButton extends AppCompatButton {
                             }
                             break;
                         case MOVE:
-                            setY(event.getRawY() - dY - tapDy);
+                            float newY = event.getRawY() - dY - tapDy;
+                            if (newY > 0 && newY < PARENT_HEIGHT - getHeight()) {
+                                setY(event.getRawY() - dY - tapDy);
+                            }
                             break;
                         case RESIZE_BOT:
                             int newHeight = Math.round(event.getRawY() - dY - tapDy + origHeight - getY());
-                            if (newHeight > 200) {
+                            if (newHeight > MIN_HEIGHT && newHeight < PARENT_HEIGHT - getY()) {
                                 ViewGroup.LayoutParams params = getLayoutParams();
                                 params.height = newHeight;
                                 setLayoutParams(params);
@@ -116,9 +110,9 @@ public class DraggableButton extends AppCompatButton {
                             break;
                     }
                 }
-
                 break;
             case MotionEvent.ACTION_UP:
+                parent.requestDisallowInterceptTouchEvent(false);
                 if (isClick || event.getEventTime() - event.getDownTime() < CLICK_TIME) {
                     performClick();
                 }
@@ -128,6 +122,7 @@ public class DraggableButton extends AppCompatButton {
     }
 
     @Override
+    // warning on onTouchEvent says this needs to be included
     public boolean performClick() {
         return super.performClick();
     }

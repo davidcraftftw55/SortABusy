@@ -1,21 +1,134 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".MainActivity">
+        tools:context=".MainActivity"
+        android:orientation="vertical">
 
-    <me.codecritter.sortabusy.DraggableButton
-            android:id="@+id/button"
-            android:layout_width="160dp"
-            android:layout_height="160dp"
-            android:text="@string/button"
-            android:contentDescription="@string/button_desc" />
-
-    <TextView
-            android:text="TextView"
-            android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/daySelectRow"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/textView" />
+            android:orientation="horizontal"
+            android:layout_marginTop="0dp"
+            android:layout_alignParentTop="true">
+
+        <Button
+                android:id="@+id/prevDayButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="left"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toLeftOf="@id/dayDisplay" />
+
+        <TextView
+                android:id="@+id/dayDisplay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Today"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toRightOf="@id/prevDayButton"
+                app:layout_constraintRight_toLeftOf="@id/nextDayButton" />
+
+        <Button
+                android:id="@+id/nextDayButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="right"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toRightOf="@id/dayDisplay"
+                app:layout_constraintRight_toRightOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+            android:id="@+id/displayRow"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:layout_below="@id/daySelectRow"
+            android:layout_above="@id/buttonRow">
+
+        <ScrollView
+                android:id="@+id/scrollView"
+                android:layout_width="0dp"
+                android:layout_weight="7"
+                android:layout_height="match_parent">
+
+            <RelativeLayout
+                    android:id="@+id/scheduleDisplay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp">
+
+                <ImageView
+                        android:id="@+id/displayBackground"
+                        android:layout_width="match_parent"
+                        android:layout_height="1000dp"
+                        style="@style/BackgroundImageView"
+                        android:contentDescription="background hour notches" />
+
+
+
+            </RelativeLayout>
+
+        </ScrollView>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:layout_weight="1">
+
+            <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:textSize="24sp"
+                    android:text="+" />
+
+            <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:scaleX="0.75"
+                    android:scaleY="0.75"
+                    android:contentDescription="Zoom icon"
+                    app:srcCompat="@drawable/zoom" />
+
+            <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:textSize="24sp"
+                    android:text="-" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+            android:id="@+id/buttonRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="0dp">
+
+        <ToggleButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOff="Edit Mode"
+                android:textOn="Edit Mode" />
+
+    </LinearLayout>
 
 </RelativeLayout>
