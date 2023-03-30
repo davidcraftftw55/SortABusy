@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
+import android.widget.ToggleButton;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -30,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.displayBackground).post(() -> {
             int width = view.getWidth();
             int height = view.getHeight();
-            ScrollView scrollView = findViewById(R.id.scrollView);
             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
 
@@ -76,17 +76,22 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-            DraggableButton button = new DraggableButton(this, scrollView, width, height, 60);
-            button.setLayoutParams(new RelativeLayout.LayoutParams(width - 100, 120));
-            button.setTextSize(10);
-            button.setPadding(50, 10, 0, 0);
-            button.setText("Hanging w Riya");
-            button.setGravity(Gravity.TOP | Gravity.START);
-            button.setOnClickListener(clicked -> ((Button) clicked).setText("Gotta love it"));
-            button.setAllCaps(false);
-            button.setX(100);
-            button.setY(10);
-            ((RelativeLayout) findViewById(R.id.scheduleDisplay)).addView(button);
+            ScrollView scrollView = findViewById(R.id.scrollView);
+            ToggleButton editMode = findViewById(R.id.editModeToggle);
+            for (int j = 0; j < 1; j += 4) {
+                DraggableButton button = new DraggableButton(this, scrollView, width, height,
+                        editMode, 60, 10);
+                button.setLayoutParams(new RelativeLayout.LayoutParams(width - 100, 240));
+                button.setTextSize(10);
+                button.setPadding(50, 10, 0, 0);
+                button.setText("Hanging w Riya");
+                button.setGravity(Gravity.TOP | Gravity.START);
+                button.setOnClickListener(clicked -> ((Button) clicked).setText("Gotta love it"));
+                button.setAllCaps(false);
+                button.setX(100);
+                button.setY(10 + 60 * j);
+                ((RelativeLayout) findViewById(R.id.scheduleDisplay)).addView(button);
+            }
         });
     }
 }
