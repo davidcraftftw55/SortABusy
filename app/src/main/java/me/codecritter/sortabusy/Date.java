@@ -21,14 +21,6 @@ public class Date {
         this.day = day;
     }
 
-    public Date(long epochTime) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(epochTime);
-        year = calendar.get(Calendar.YEAR);
-        month = calendar.get(Calendar.MONTH + 1);
-        day = calendar.get(Calendar.DAY_OF_MONTH);
-    }
-
     public Date getTomorrow() {
         int year = this.year;
         int month = this.month;

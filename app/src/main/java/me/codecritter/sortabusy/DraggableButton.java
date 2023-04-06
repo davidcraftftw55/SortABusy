@@ -5,7 +5,6 @@ import android.content.Context;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.widget.ScrollView;
-import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatButton;
@@ -54,13 +53,12 @@ public class DraggableButton extends AppCompatButton {
      * @param event TimeBlock object corresponding to the event this button represents
      * @param parent ScrollView where this button will be added
      * @param parentHeight height of parent view
-     * @param editMode toggle button that enables/disables editMode for the ScrollView
      * @param minHeight minimum height of this button
      *                  (should be 15 minutes, or 1/4 of the space between hour lines)
      * @param yOffset y coordinate of the top most block for this button
      */
     public DraggableButton(@NonNull Context context, TimeBlock event, ScrollView parent,
-                           int parentHeight, ToggleButton editMode, int minHeight, int yOffset) {
+                           int parentHeight, int minHeight, int yOffset) {
         super(context);
 
         this.event = event;
@@ -69,8 +67,7 @@ public class DraggableButton extends AppCompatButton {
         MIN_HEIGHT = minHeight;
         Y_OFFSET = yOffset;
 
-        this.editMode = false;
-        editMode.setOnClickListener(view -> this.editMode = ((ToggleButton) view).isChecked());
+        editMode = false;
     }
 
     @Override
@@ -163,6 +160,10 @@ public class DraggableButton extends AppCompatButton {
         } else {
             return y + (MIN_HEIGHT - mod);
         }
+    }
+
+    public void setEditMode(boolean editMode) {
+        this.editMode = editMode;
     }
 
     @Override

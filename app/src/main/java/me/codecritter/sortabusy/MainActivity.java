@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private ArrayList<DraggableButton> buttons;
+    private Schedule schedule;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,26 +61,44 @@ public class MainActivity extends AppCompatActivity {
             drawScheduleMaker(view, width, height);
 
             ScrollView scrollView = findViewById(R.id.scrollView);
-            ToggleButton editMode = findViewById(R.id.editModeToggle);
-            Schedule schedule = new Schedule(new Date());
-            displaySchedule(scrollView, editMode, width, height, schedule);
+            schedule = new Schedule(new Date());
+            displaySchedule(scrollView, width, height, schedule);
+        });
+
+        findViewById(R.id.editModeToggle).setOnClickListener(editMode -> {
+            boolean isEditingNow = ((ToggleButton) editMode).isChecked();
+            for (DraggableButton button : buttons) {
+                button.setEditMode(isEditingNow);
+            }
+
+            if (!isEditingNow) {
+                CalendarHelper.getInstance(this).saveSchedule(this, schedule);
+            }
         });
     }
 
-    private void displaySchedule(ScrollView scrollView, ToggleButton editMode, int width, int height,
-                                 Schedule schedule) {
-        CalendarHelper.getInstance(this).loadSchedule(this, schedule);
-        for (TimeBlock event : schedule.getSchedule()) {
-            addTimeBlock(scrollView, editMode, width, height, event);
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (((ToggleButton) findViewById(R.id.editModeToggle)).isChecked()) {
+            CalendarHelper.getInstance(this).saveSchedule(this, schedule);
         }
     }
 
-    private void addTimeBlock(ScrollView scrollView, ToggleButton editMode, int width, int height,
+    private void displaySchedule(ScrollView scrollView, int width, int height,
+                                 Schedule schedule) {
+        CalendarHelper.getInstance(this).loadSchedule(this, schedule);
+        for (TimeBlock event : schedule.getSchedule()) {
+            addTimeBlock(scrollView, width, height, event);
+        }
+    }
+
+    private void addTimeBlock(ScrollView scrollView, int width, int height,
                               TimeBlock event) {
         long start = event.getStart().getHour() + (event.getStart().getMinute() / 60);
         long end = event.getEnd().getHour() + (event.getEnd().getMinute() / 60);
         DraggableButton button = new DraggableButton(this, event, scrollView, height,
-                editMode, HOUR_HEIGHT / 4, TOP_PADDING);
+                HOUR_HEIGHT / 4, TOP_PADDING);
         button.setLayoutParams(new ViewGroup.LayoutParams(width - HOUR_TEXT_WIDTH,
                 (int) ((end - start) * HOUR_HEIGHT)));
         button.setTextSize(10);

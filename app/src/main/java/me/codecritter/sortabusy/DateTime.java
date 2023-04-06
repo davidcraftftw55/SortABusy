@@ -21,7 +21,7 @@ public class DateTime extends Date {
     }
 
     public DateTime(long epochTime) {
-        super(epochTime);
+        super();
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(epochTime);
         hour = calendar.get(Calendar.HOUR_OF_DAY);
@@ -30,7 +30,7 @@ public class DateTime extends Date {
 
     public long getEpochTime() {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(getYear(), getMonth(), getDay(), hour, minute, 0);
+        calendar.set(getYear(), getMonth() - 1, getDay(), hour, minute, 0);
         return calendar.getTimeInMillis();
     }
 

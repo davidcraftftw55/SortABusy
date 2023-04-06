@@ -69,13 +69,13 @@ public class CalendarHelper {
                 values.put("dtstart", event.getStart().getEpochTime());
                 values.put("dtend", event.getEnd().getEpochTime());
                 values.put("eventTimezone", timezone);
-                values.put("caledar_id", calendarId);
+                values.put("calendar_id", calendarId);
                 if (event.getEventId() == -1) {
                     context.getContentResolver().insert(CalendarContract.Events.CONTENT_URI, values);
                 } else {
                     context.getContentResolver().update(
                             ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI,
-                                    event.getEventId()), null, null);
+                                    event.getEventId()), values, null);
                 }
             }
             // TASK add block for if event was deleted
