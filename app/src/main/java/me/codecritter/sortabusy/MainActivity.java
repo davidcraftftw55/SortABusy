@@ -77,14 +77,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (((ToggleButton) findViewById(R.id.editModeToggle)).isChecked()) {
-            CalendarHelper.getInstance(this).saveSchedule(this, schedule);
-        }
-    }
-
     private void displaySchedule(ScrollView scrollView, int width, int height,
                                  Schedule schedule) {
         CalendarHelper.getInstance(this).loadSchedule(this, schedule);

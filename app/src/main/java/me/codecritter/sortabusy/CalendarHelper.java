@@ -4,7 +4,10 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.CalendarContract;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -61,25 +64,28 @@ public class CalendarHelper {
     }
 
     public void saveSchedule(Context context, Schedule schedule) {
-        ArrayList<TimeBlock> events = schedule.getSchedule();
-        for (TimeBlock event : events) {
-            if (event.isChanged()) {
-                ContentValues values = new ContentValues();
-                values.put("title", event.getName());
-                values.put("dtstart", event.getStart().getEpochTime());
-                values.put("dtend", event.getEnd().getEpochTime());
-                values.put("eventTimezone", timezone);
-                values.put("calendar_id", calendarId);
-                if (event.getEventId() == -1) {
-                    context.getContentResolver().insert(CalendarContract.Events.CONTENT_URI, values);
-                } else {
-                    context.getContentResolver().update(
-                            ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI,
-                                    event.getEventId()), values, null);
+        new Handler(Looper.getMainLooper()).post(() -> {
+            ArrayList<TimeBlock> events = schedule.getSchedule();
+            for (TimeBlock event : events) {
+                if (event.isChanged()) {
+                    ContentValues values = new ContentValues();
+                    values.put("title", event.getName());
+                    values.put("dtstart", event.getStart().getEpochTime());
+                    values.put("dtend", event.getEnd().getEpochTime());
+                    values.put("eventTimezone", timezone);
+                    values.put("calendar_id", calendarId);
+                    if (event.getEventId() == -1) {
+                        context.getContentResolver().insert(CalendarContract.Events.CONTENT_URI, values);
+                    } else {
+                        context.getContentResolver().update(
+                                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI,
+                                        event.getEventId()), values, null);
+                    }
                 }
+                // TASK add block for if event was deleted
             }
-            // TASK add block for if event was deleted
-        }
+            Toast.makeText(context, "Schedule saved", Toast.LENGTH_SHORT).show();
+        });
     }
 
     public String getTimezone() {
