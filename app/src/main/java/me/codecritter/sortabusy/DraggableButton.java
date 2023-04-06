@@ -1,7 +1,7 @@
 package me.codecritter.sortabusy;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.widget.ScrollView;
@@ -10,9 +10,12 @@ import android.widget.ToggleButton;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatButton;
 
+import java.util.Calendar;
+
 /**
  * A custom implementation of a Button which allows the user to drag on it to either resize or move it
  */
+@SuppressLint("ViewConstructor")
 public class DraggableButton extends AppCompatButton {
 
     /**
@@ -24,11 +27,11 @@ public class DraggableButton extends AppCompatButton {
 
     private final ScrollView parent;
     private final int PARENT_HEIGHT;
-    private final int PARENT_WIDTH;
     private final int MIN_HEIGHT;
     private final int Y_OFFSET;
 
 
+    private final TimeBlock event;
     private boolean editMode;
     private boolean isClick;
     private DRAG_TYPE dragType;
@@ -48,41 +51,40 @@ public class DraggableButton extends AppCompatButton {
     /**
      * Constructs this button (typically only used by code)
      * @param context context needed
+     * @param event TimeBlock object corresponding to the event this button represents
      * @param parent ScrollView where this button will be added
-     * @param parentWidth width of parent view
      * @param parentHeight height of parent view
+     * @param editMode toggle button that enables/disables editMode for the ScrollView
      * @param minHeight minimum height of this button
-     *                  (should be 15 minutes, or 1/4 of the space between lines)
+     *                  (should be 15 minutes, or 1/4 of the space between hour lines)
      * @param yOffset y coordinate of the top most block for this button
      */
-    public DraggableButton(@NonNull Context context, ScrollView parent, int parentWidth,
+    public DraggableButton(@NonNull Context context, TimeBlock event, ScrollView parent,
                            int parentHeight, ToggleButton editMode, int minHeight, int yOffset) {
         super(context);
 
+        this.event = event;
         this.parent = parent;
-        PARENT_WIDTH = parentWidth;
         PARENT_HEIGHT = parentHeight;
         MIN_HEIGHT = minHeight;
         Y_OFFSET = yOffset;
 
         this.editMode = false;
-        editMode.setOnClickListener(view -> {
-            this.editMode = ((ToggleButton) view).isChecked();
-        });
+        editMode.setOnClickListener(view -> this.editMode = ((ToggleButton) view).isChecked());
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    public boolean onTouchEvent(MotionEvent motionEvent) {
         if (editMode) {
-            switch (event.getAction()) {
+            switch (motionEvent.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     parent.requestDisallowInterceptTouchEvent(true);
                     isClick = true;
                     int[] coords = new int[2];
                     getLocationOnScreen(coords);
-                    float tapDx = event.getRawX() - coords[0];
+                    float tapDx = motionEvent.getRawX() - coords[0];
                     dY = coords[1] - getY();
-                    tapDy = event.getRawY() - coords[1];
+                    tapDy = motionEvent.getRawY() - coords[1];
                     origHeight = getHeight();
 
                     if (tapDx < getWidth() * 0.33) {
@@ -94,17 +96,14 @@ public class DraggableButton extends AppCompatButton {
                     }
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    if (!isClick || event.getEventTime() - event.getDownTime() > 100) {
+                    if (!isClick || motionEvent.getEventTime() - motionEvent.getDownTime() > 100) {
                         isClick = false;
                         switch (dragType) {
                             case RESIZE_TOP:
                                 // find notch for newTop
-                                float newTop = roundToNotch(event.getRawY() - dY - tapDy);
+                                float newTop = roundToNotch(motionEvent.getRawY() - dY - tapDy);
 
                                 int heightIncrease = Math.round(getY() - newTop);
-                                if (heightIncrease != 0) {
-                                    Log.i("log", getHeight() + ", " + heightIncrease);
-                                }
                                 if (getHeight() + heightIncrease >= MIN_HEIGHT && newTop > 0) {
                                     setY(newTop);
 
@@ -114,15 +113,15 @@ public class DraggableButton extends AppCompatButton {
                                 }
                                 break;
                             case MOVE:
-                                float newY = roundToNotch(event.getRawY() - dY - tapDy);
+                                float newY = roundToNotch(motionEvent.getRawY() - dY - tapDy);
                                 if (newY > 0 && newY < PARENT_HEIGHT - getHeight()) {
                                     setY(newY);
                                 }
                                 break;
                             case RESIZE_BOT:
-                                float newBot = roundToNotch(event.getRawY() - dY - tapDy);
+                                float newBot = roundToNotch(motionEvent.getRawY() - dY - tapDy);
                                 int newHeight = Math.round(newBot + origHeight - getY());
-                                if (newHeight > MIN_HEIGHT && newHeight < PARENT_HEIGHT - getY()) {
+                                if (newHeight >= MIN_HEIGHT && newHeight < PARENT_HEIGHT - getY()) {
                                     ViewGroup.LayoutParams params = getLayoutParams();
                                     params.height = newHeight;
                                     setLayoutParams(params);
@@ -133,8 +132,23 @@ public class DraggableButton extends AppCompatButton {
                     break;
                 case MotionEvent.ACTION_UP:
                     parent.requestDisallowInterceptTouchEvent(false);
-                    if (isClick || event.getEventTime() - event.getDownTime() < CLICK_TIME) {
+                    if (isClick || motionEvent.getEventTime() - motionEvent.getDownTime() < CLICK_TIME) {
                         performClick();
+                    } else {
+                        switch (dragType) {
+                            case RESIZE_TOP:
+                                event.setStart(new DateTime(MainActivity.convertYToTime(getContext(), (int) getY())));
+                                break;
+                            case MOVE:
+                                event.setStart(new DateTime(MainActivity.convertYToTime(getContext(), (int) getY())));
+                                event.setEnd(new DateTime(MainActivity.convertYToTime(getContext(), (int) (getY() + getHeight()))));
+                                break;
+                            case RESIZE_BOT:
+                                event.setEnd(new DateTime(MainActivity.convertYToTime(getContext(), (int) (getY() + getHeight()))));
+                                break;
+                        }
+                        Calendar debug = Calendar.getInstance();
+                        debug.setTimeInMillis(MainActivity.convertYToTime(getContext(), (int) getY()));
                     }
                     break;
             }
@@ -152,7 +166,7 @@ public class DraggableButton extends AppCompatButton {
     }
 
     @Override
-    // warning on onTouchEvent says this needs to be included
+    // onTouchEvent warning says this needs to be included
     public boolean performClick() {
         return super.performClick();
     }
