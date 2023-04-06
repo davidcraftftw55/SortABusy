@@ -54,4 +54,8 @@ public class TimeBlock {
         this.end = end;
         changed = true;
     }
+
+    public void markAsUpdated() {
+        changed = false;
+    }
 }

@@ -42,25 +42,28 @@ public class CalendarHelper {
     }
 
     public void loadSchedule(Context context, Schedule schedule) {
-        String midnight = "" + schedule.getDate().getMidnight();
-        String midnightTomorrow = "" + schedule.getDate().getMidnightTomorrow();
-        Cursor cursor = context.getContentResolver().query(CalendarContract.Events.CONTENT_URI,
-                new String[]{"calendar_id", "_id", "title", "dtstart", "dtend"},
-                "(calendar_id = ?) AND (dtstart > ?) AND (dtend < ?)",
-                new String[]{"" + calendarId, midnight, midnightTomorrow}, null);
-        ArrayList<TimeBlock> events = schedule.getSchedule();
-        while (cursor.moveToNext()) {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(cursor.getLong(3));
-            DateTime start = new DateTime(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1,
-                    calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
-            calendar.setTimeInMillis(cursor.getLong(4));
-            DateTime end = new DateTime(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1,
-                    calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
-            TimeBlock event = new TimeBlock(cursor.getLong(1), cursor.getString(2), start, end);
-            events.add(event);
-        }
-        cursor.close();
+        new Handler(Looper.getMainLooper()).post(() -> {
+            String midnight = "" + schedule.getDate().getMidnight();
+            String midnightTomorrow = "" + schedule.getDate().getMidnightTomorrow();
+            Cursor cursor = context.getContentResolver().query(CalendarContract.Events.CONTENT_URI,
+                    new String[]{"calendar_id", "_id", "title", "dtstart", "dtend"},
+                    "(calendar_id = ?) AND (dtstart > ?) AND (dtend < ?)",
+                    new String[]{"" + calendarId, midnight, midnightTomorrow}, null);
+            ArrayList<TimeBlock> events = schedule.getSchedule();
+            while (cursor.moveToNext()) {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTimeInMillis(cursor.getLong(3));
+                DateTime start = new DateTime(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1,
+                        calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
+                calendar.setTimeInMillis(cursor.getLong(4));
+                DateTime end = new DateTime(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1,
+                        calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
+                TimeBlock event = new TimeBlock(cursor.getLong(1), cursor.getString(2), start, end);
+                events.add(event);
+            }
+            cursor.close();
+            Toast.makeText(context, "Schedule loaded", Toast.LENGTH_SHORT).show();
+        });
     }
 
     public void saveSchedule(Context context, Schedule schedule) {
@@ -81,6 +84,7 @@ public class CalendarHelper {
                                 ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI,
                                         event.getEventId()), values, null);
                     }
+                    event.markAsUpdated();
                 }
                 // TASK add block for if event was deleted
             }
