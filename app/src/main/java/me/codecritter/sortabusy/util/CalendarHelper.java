@@ -1,4 +1,4 @@
-package me.codecritter.sortabusy;
+package me.codecritter.sortabusy.util;
 
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -12,10 +12,22 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+import me.codecritter.sortabusy.DateTime;
+import me.codecritter.sortabusy.Schedule;
+import me.codecritter.sortabusy.TimeBlock;
+
+/**
+ * Utility class containing all this app's interactions with the CalendarContract, the phone's SQL database for calendar events
+ */
 public class CalendarHelper {
 
     private static CalendarHelper instance;
 
+    /**
+     * Gets the current instance of CalendarHelper, creating a new instance if there is none
+     * @param context context needed (in case a new CalendarHelper is to be constructed
+     * @return current or new instance of CalendarHelper
+     */
     public static CalendarHelper getInstance(Context context) {
         if (instance == null) {
             instance = new CalendarHelper(context);
@@ -41,6 +53,12 @@ public class CalendarHelper {
         cursor.close();
     }
 
+    /**
+     * Loads all events into schedule object, the Schedule object's schedule ArrayList will be
+     * populated with events that occur the Date specified in the Schedule object
+     * @param context context needed
+     * @param schedule schedule object to load events into
+     */
     public void loadSchedule(Context context, Schedule schedule) {
         new Handler(Looper.getMainLooper()).post(() -> {
             String midnight = "" + schedule.getDate().getMidnight();
@@ -66,6 +84,12 @@ public class CalendarHelper {
         });
     }
 
+    /**
+     * Saves all events with changes in the specified Schedule parameter to the CalendarContract
+     * (to which the phone will eventually save to GoogleCalendar)
+     * @param context context needed
+     * @param schedule schedule object to save to CalendarContract
+     */
     public void saveSchedule(Context context, Schedule schedule) {
         new Handler(Looper.getMainLooper()).post(() -> {
             ArrayList<TimeBlock> events = schedule.getSchedule();
@@ -92,6 +116,10 @@ public class CalendarHelper {
         });
     }
 
+    /**
+     * Getter method of the timezone variable
+     * @return String representation of this phone's timezone
+     */
     public String getTimezone() {
         return timezone;
     }

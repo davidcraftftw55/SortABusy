@@ -1,4 +1,4 @@
-package me.codecritter.sortabusy;
+package me.codecritter.sortabusy.view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -10,6 +10,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatButton;
 
 import java.util.Calendar;
+
+import me.codecritter.sortabusy.DateTime;
+import me.codecritter.sortabusy.TimeBlock;
+import me.codecritter.sortabusy.activity.MainActivity;
 
 /**
  * A custom implementation of a Button which allows the user to drag on it to either resize or move it
@@ -162,6 +166,10 @@ public class DraggableButton extends AppCompatButton {
         }
     }
 
+    /**
+     * Setter method for the editMode variable
+     * @param editMode true if this DraggableButton can now be dragged, false otherwise
+     */
     public void setEditMode(boolean editMode) {
         this.editMode = editMode;
     }

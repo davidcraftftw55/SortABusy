@@ -1,4 +1,4 @@
-package me.codecritter.sortabusy;
+package me.codecritter.sortabusy.activity;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -19,6 +19,13 @@ import androidx.appcompat.app.AppCompatDelegate;
 import java.util.ArrayList;
 import java.util.TimeZone;
 
+import me.codecritter.sortabusy.util.CalendarHelper;
+import me.codecritter.sortabusy.Date;
+import me.codecritter.sortabusy.view.DraggableButton;
+import me.codecritter.sortabusy.R;
+import me.codecritter.sortabusy.Schedule;
+import me.codecritter.sortabusy.TimeBlock;
+
 /**
  * The Main Activity for this app is the Schedule Maker, where user will be able to edit their
  * schedule on a given day; they should also be able to navigate to the other pages from this activity
@@ -34,6 +41,12 @@ public class MainActivity extends AppCompatActivity {
     private static final int HOUR_TEXT_MARGIN = 80;
     private static final int HOUR_TEXT_TOP_PADDING = 26;
 
+    /**
+     * Translates the y coordinate into a time of day, according to the format of this Schedule Maker
+     * @param context context needed
+     * @param y y coordinate to translate
+     * @return time (in milliseconds since the epoch) that the y coordinate corresponds to
+     */
     public static long convertYToTime(Context context, int y) {
         long time = (y - TOP_PADDING) * 3600000L / HOUR_HEIGHT;
         time -= TimeZone.getTimeZone(CalendarHelper.getInstance(context).getTimezone()).getOffset(time);
