@@ -6,8 +6,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.provider.CalendarContract;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -35,6 +38,7 @@ public class CalendarHelper {
         return instance;
     }
 
+    private final Handler saveHandler;
     private long calendarId;
     private String timezone;
 
@@ -51,6 +55,13 @@ public class CalendarHelper {
             }
         }
         cursor.close();
+
+        saveHandler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                Toast.makeText(context, "Schedule saved", Toast.LENGTH_SHORT).show();
+            }
+        };
     }
 
     /**
@@ -60,28 +71,25 @@ public class CalendarHelper {
      * @param schedule schedule object to load events into
      */
     public void loadSchedule(Context context, Schedule schedule) {
-        new Handler(Looper.getMainLooper()).post(() -> {
-            String midnight = "" + schedule.getDate().getMidnight();
-            String midnightTomorrow = "" + schedule.getDate().getMidnightTomorrow();
-            Cursor cursor = context.getContentResolver().query(CalendarContract.Events.CONTENT_URI,
-                    new String[]{"calendar_id", "_id", "title", "dtstart", "dtend"},
-                    "(calendar_id = ?) AND (dtstart > ?) AND (dtend < ?)",
-                    new String[]{"" + calendarId, midnight, midnightTomorrow}, null);
-            ArrayList<TimeBlock> events = schedule.getSchedule();
-            while (cursor.moveToNext()) {
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTimeInMillis(cursor.getLong(3));
-                DateTime start = new DateTime(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1,
-                        calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
-                calendar.setTimeInMillis(cursor.getLong(4));
-                DateTime end = new DateTime(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1,
-                        calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
-                TimeBlock event = new TimeBlock(cursor.getLong(1), cursor.getString(2), start, end);
-                events.add(event);
-            }
-            cursor.close();
-            Toast.makeText(context, "Schedule loaded", Toast.LENGTH_SHORT).show();
-        });
+        String midnight = "" + schedule.getDate().getMidnight();
+        String midnightTomorrow = "" + schedule.getDate().getMidnightTomorrow();
+        Cursor cursor = context.getContentResolver().query(CalendarContract.Events.CONTENT_URI,
+                new String[]{"calendar_id", "_id", "title", "dtstart", "dtend"},
+                "(calendar_id = ?) AND (dtstart > ?) AND (dtend < ?)",
+                new String[]{"" + calendarId, midnight, midnightTomorrow}, null);
+        ArrayList<TimeBlock> events = schedule.getSchedule();
+        while (cursor.moveToNext()) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(cursor.getLong(3));
+            DateTime start = new DateTime(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1,
+                    calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
+            calendar.setTimeInMillis(cursor.getLong(4));
+            DateTime end = new DateTime(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1,
+                    calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
+            TimeBlock event = new TimeBlock(cursor.getLong(1), cursor.getString(2), start, end);
+            events.add(event);
+        }
+        cursor.close();
     }
 
     /**
@@ -91,7 +99,7 @@ public class CalendarHelper {
      * @param schedule schedule object to save to CalendarContract
      */
     public void saveSchedule(Context context, Schedule schedule) {
-        new Handler(Looper.getMainLooper()).post(() -> {
+        saveHandler.post(() -> {
             ArrayList<TimeBlock> events = schedule.getSchedule();
             for (TimeBlock event : events) {
                 if (event.isChanged()) {
@@ -112,7 +120,7 @@ public class CalendarHelper {
                 }
                 // TASK add block for if event was deleted
             }
-            Toast.makeText(context, "Schedule saved", Toast.LENGTH_SHORT).show();
+            saveHandler.sendEmptyMessage(0);
         });
     }
 

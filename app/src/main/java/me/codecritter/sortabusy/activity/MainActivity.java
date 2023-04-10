@@ -19,12 +19,12 @@ import androidx.appcompat.app.AppCompatDelegate;
 import java.util.ArrayList;
 import java.util.TimeZone;
 
-import me.codecritter.sortabusy.util.CalendarHelper;
 import me.codecritter.sortabusy.Date;
-import me.codecritter.sortabusy.view.DraggableButton;
 import me.codecritter.sortabusy.R;
 import me.codecritter.sortabusy.Schedule;
 import me.codecritter.sortabusy.TimeBlock;
+import me.codecritter.sortabusy.util.CalendarHelper;
+import me.codecritter.sortabusy.view.DraggableButton;
 
 /**
  * The Main Activity for this app is the Schedule Maker, where user will be able to edit their
