@@ -12,6 +12,7 @@ import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.ToggleButton;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -22,6 +23,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.TimeZone;
 
 import me.codecritter.sortabusy.Date;
@@ -106,6 +108,15 @@ public class MainActivity extends AppCompatActivity {
                 }
                 return true;
             });
+        });
+
+        ScrollView scrollView = findViewById(R.id.scrollView);
+        scrollView.post(() -> {
+            Calendar present = Calendar.getInstance();
+            int hour = present.get(Calendar.HOUR_OF_DAY);
+            int minute = present.get(Calendar.MINUTE);
+            float target = hour + minute / 60F;
+            scrollView.scrollTo(0, (int) (target * HOUR_HEIGHT + TOP_PADDING));
         });
 
         findViewById(R.id.editModeToggle).setOnClickListener(editMode -> {
