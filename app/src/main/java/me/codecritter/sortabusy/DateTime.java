@@ -29,7 +29,7 @@ public class DateTime extends Date {
      * @param epochTime time to instantiate this DateTime object to, in milliseconds since the epoch
      */
     public DateTime(long epochTime) {
-        super();
+        super(epochTime);
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(epochTime);
         hour = calendar.get(Calendar.HOUR_OF_DAY);

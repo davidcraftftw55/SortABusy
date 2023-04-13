@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -54,7 +55,10 @@ public class MainActivity extends AppCompatActivity {
         private String title;
         private boolean newEvent;
         private boolean deleted;
-        private EventDetails() {}
+
+        private EventDetails() {
+        }
+
         private EventDetails(int index, String title, boolean newEvent) {
             this.index = index;
             this.title = title;
@@ -62,17 +66,33 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private static Date selectedDate = new Date();
+
     /**
      * Translates the y coordinate into a time of day, according to the format of this Schedule Maker
      *
-     * @param context context needed
-     * @param y       y coordinate to translate
+     * @param y y coordinate to translate
      * @return time (in milliseconds since the epoch) that the y coordinate corresponds to
      */
-    public static long convertYToTime(Context context, int y) {
-        long time = (y - TOP_PADDING) * 3600000L / HOUR_HEIGHT;
-        time -= TimeZone.getTimeZone(CalendarHelper.getInstance(context).getTimezone()).getOffset(time);
-        return time;
+    public static long convertYToTime(int y) {
+        Calendar time = Calendar.getInstance();
+        int hour = (y - TOP_PADDING) / HOUR_HEIGHT;
+        int minute = (int) ((y - TOP_PADDING) % HOUR_HEIGHT * 60F / HOUR_HEIGHT);
+        time.set(selectedDate.getYear(), selectedDate.getMonth() - 1, selectedDate.getDay(), hour, minute, 0);
+        return time.getTimeInMillis();
+    }
+
+    /**
+     * Translates the epochTime into a y coordinate, according to the format of this Schedule Maker
+     *
+     * @param context context needed
+     * @param epochTime time (in milliseconds since the epoch) to convert to a y coordinate
+     * @return y coordinate that corresponds to the epochTime param
+     */
+    public static int convertTimeToY(Context context, long epochTime) {
+        int timezoneOffset = TimeZone.getTimeZone(CalendarHelper.getInstance(context).getTimezone())
+                .getOffset(epochTime);
+        return (int) ((epochTime + timezoneOffset) % 86400000L / 3600000F * HOUR_HEIGHT + TOP_PADDING);
     }
 
     private ArrayList<DraggableButton> buttons;
@@ -97,13 +117,13 @@ public class MainActivity extends AppCompatActivity {
             int height = view.getHeight();
             drawScheduleMaker(view, width, height);
 
-            schedule = new Schedule(new Date());
-            displaySchedule(width, height, schedule);
+            schedule = new Schedule(selectedDate);
+            displaySchedule(width, height);
 
             findViewById(R.id.scheduleDisplay).setOnTouchListener((display, event) -> {
                 if (editModeEnabled && event.getAction() == MotionEvent.ACTION_UP
                         && event.getEventTime() - event.getDownTime() < 250L) {
-                    addNewTimeBlock(convertYToTime(this, (int) event.getY()), width, height);
+                    addNewTimeBlock(convertYToTime((int) event.getY()), width, height);
                     display.performClick(); // really just to silence the warning
                 }
                 return true;
@@ -111,13 +131,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         ScrollView scrollView = findViewById(R.id.scrollView);
-        scrollView.post(() -> {
-            Calendar present = Calendar.getInstance();
-            int hour = present.get(Calendar.HOUR_OF_DAY);
-            int minute = present.get(Calendar.MINUTE);
-            float target = hour + minute / 60F;
-            scrollView.scrollTo(0, (int) (target * HOUR_HEIGHT + TOP_PADDING));
-        });
+        scrollView.post(() -> scrollView.scrollTo(0,
+                convertTimeToY(this, System.currentTimeMillis() - 1800000)));
 
         findViewById(R.id.editModeToggle).setOnClickListener(editMode -> {
             editModeEnabled = ((ToggleButton) editMode).isChecked();
@@ -135,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
                     @NonNull
                     @Override
                     public Intent createIntent(@NonNull Context context, EventDetails input) {
-                        Intent intent = new Intent(getContext(), me.codecritter.sortabusy.activity.EventDetails.class);
+                        Intent intent = new Intent(context, me.codecritter.sortabusy.activity.EventDetails.class);
                         intent.putExtra("EVENT_INDEX", input.index);
                         intent.putExtra("EVENT_TITLE", input.title);
                         if (input.newEvent) {
@@ -186,10 +201,20 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
-    }
 
-    private Context getContext() {
-        return this;
+        findViewById(R.id.prevDayButton).setOnClickListener(button -> {
+            clearSchedule();
+            selectedDate = selectedDate.getYesterday();
+            schedule = new Schedule(selectedDate);
+            displaySchedule(view.getWidth(), view.getHeight());
+        });
+
+        findViewById(R.id.nextDayButton).setOnClickListener(button -> {
+            clearSchedule();
+            selectedDate = selectedDate.getTomorrow();
+            schedule = new Schedule(selectedDate);
+            displaySchedule(view.getWidth(), view.getHeight());
+        });
     }
 
     private void addNewTimeBlock(long startTime, int width, int height) {
@@ -204,11 +229,29 @@ public class MainActivity extends AppCompatActivity {
         eventDetailsLauncher.launch(new EventDetails(index, "", true));
     }
 
-    private void displaySchedule(int width, int height,
-                                 Schedule schedule) {
+    private void displaySchedule(int width, int height) {
+        ((TextView) findViewById(R.id.dayDisplay)).setText(selectedDate.getDayName());
         CalendarHelper.getInstance(this).loadSchedule(this, schedule);
         for (TimeBlock event : schedule.getSchedule()) {
             addTimeBlock(width, height, event);
+        }
+    }
+
+    private void clearSchedule() {
+        // save schedule
+        if (editModeEnabled) {
+            CalendarHelper.getInstance(this).saveSchedule(this, schedule);
+        }
+
+        // disable editMode if enabled
+        editModeEnabled = false;
+        ((ToggleButton) findViewById(R.id.editModeToggle)).setChecked(false);
+
+        // remove all timeblocks from schedule maker
+        RelativeLayout layout = findViewById(R.id.scheduleDisplay);
+        while (!buttons.isEmpty()) {
+            layout.removeView(buttons.get(0));
+            buttons.remove(0);
         }
     }
 
@@ -226,7 +269,7 @@ public class MainActivity extends AppCompatActivity {
         button.setGravity(Gravity.TOP | Gravity.START);
         button.setAllCaps(false);
         button.setX(HOUR_TEXT_WIDTH);
-        button.setY((int) (start * HOUR_HEIGHT + TOP_PADDING));
+        button.setY(convertTimeToY(this, event.getStart().getEpochTime()));
 
         int index = buttons.size();
         buttons.add(button);

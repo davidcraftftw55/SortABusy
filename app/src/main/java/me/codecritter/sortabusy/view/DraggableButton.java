@@ -136,14 +136,14 @@ public class DraggableButton extends AppCompatButton {
                     } else {
                         switch (dragType) {
                             case RESIZE_TOP:
-                                event.setStart(new DateTime(MainActivity.convertYToTime(getContext(), (int) getY())));
+                                event.setStart(new DateTime(MainActivity.convertYToTime((int) getY())));
                                 break;
                             case MOVE:
-                                event.setStart(new DateTime(MainActivity.convertYToTime(getContext(), (int) getY())));
-                                event.setEnd(new DateTime(MainActivity.convertYToTime(getContext(), (int) (getY() + getHeight()))));
+                                event.setStart(new DateTime(MainActivity.convertYToTime((int) getY())));
+                                event.setEnd(new DateTime(MainActivity.convertYToTime((int) (getY() + getHeight()))));
                                 break;
                             case RESIZE_BOT:
-                                event.setEnd(new DateTime(MainActivity.convertYToTime(getContext(), (int) (getY() + getHeight()))));
+                                event.setEnd(new DateTime(MainActivity.convertYToTime((int) (getY() + getHeight()))));
                                 break;
                         }
                     }
