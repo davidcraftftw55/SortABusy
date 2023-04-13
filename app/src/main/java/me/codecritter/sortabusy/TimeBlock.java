@@ -27,6 +27,17 @@ public class TimeBlock {
     }
 
     /**
+     * Determines if this TimeBlock overlaps in some way with the other TimeBlock
+     * @param other other timeblock to check if it overlaps with this one
+     * @return true if this TimeBlock overlaps with other, false otherwise
+     */
+    public boolean isOverlapping(TimeBlock other) {
+        return (start.isBefore(other.start) && other.start.isBefore(end))
+                || (start.isBefore(other.end) && other.end.isBefore(end))
+                || (start.equals(other.start) && end.equals(other.end));
+    }
+
+    /**
      * Getter method for the eventId varaible
      * @return id of the event in the CalendarContract Events table
      */

@@ -5,12 +5,14 @@ import android.content.Context;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.widget.ScrollView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatButton;
 
 import me.codecritter.sortabusy.DateTime;
 import me.codecritter.sortabusy.TimeBlock;
+import me.codecritter.sortabusy.TimeBlockDisplayer;
 import me.codecritter.sortabusy.activity.MainActivity;
 
 /**
@@ -33,6 +35,7 @@ public class DraggableButton extends AppCompatButton {
 
 
     private final TimeBlock event;
+    private final TimeBlockDisplayer displayer;
     private boolean editMode;
     private boolean isClick;
     private DRAG_TYPE dragType;
@@ -53,6 +56,7 @@ public class DraggableButton extends AppCompatButton {
      * Constructs this button (typically only used by code)
      * @param context context needed
      * @param event TimeBlock object corresponding to the event this button represents
+     * @param displayer {@link TimeBlockDisplayer} this button will exist in
      * @param parent ScrollView where this button will be added
      * @param parentHeight height of parent view
      * @param minHeight minimum height of this button
@@ -61,10 +65,12 @@ public class DraggableButton extends AppCompatButton {
      * @param editMode true if editMode is currently enabled, and button can immediately start being
      *                 dragged, false otherwise
      */
-    public DraggableButton(@NonNull Context context, TimeBlock event, ScrollView parent,
-                           int parentHeight, int minHeight, int yOffset, boolean editMode) {
+    public DraggableButton(@NonNull Context context, TimeBlock event, TimeBlockDisplayer displayer,
+                           ScrollView parent, int parentHeight, int minHeight, int yOffset,
+                           boolean editMode) {
         super(context);
         this.event = event;
+        this.displayer = displayer;
         this.parent = parent;
         PARENT_HEIGHT = parentHeight;
         MIN_HEIGHT = minHeight;
@@ -86,6 +92,7 @@ public class DraggableButton extends AppCompatButton {
                     tapDy = motionEvent.getRawY() - coords[1];
                     origHeight = getHeight();
 
+                    Toast.makeText(getContext(), "" + getWidth(), Toast.LENGTH_SHORT).show();
                     if (tapDx < getWidth() * 0.33) {
                         dragType = DRAG_TYPE.RESIZE_TOP;
                     } else if (tapDx < getWidth() * 0.67) {
@@ -146,6 +153,7 @@ public class DraggableButton extends AppCompatButton {
                                 event.setEnd(new DateTime(MainActivity.convertYToTime((int) (getY() + getHeight()))));
                                 break;
                         }
+                        displayer.onTimeBlockMoved();
                     }
                     break;
             }
@@ -179,7 +187,7 @@ public class DraggableButton extends AppCompatButton {
     }
 
     @Override
-    // onTouchEvent warning says this needs to be included
+    @SuppressWarnings("EmptyMethod") // onTouchEvent warning says this needs to be included
     public boolean performClick() {
         return super.performClick();
     }

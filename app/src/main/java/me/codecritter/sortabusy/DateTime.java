@@ -1,5 +1,7 @@
 package me.codecritter.sortabusy;
 
+import androidx.annotation.Nullable;
+
 import java.util.Calendar;
 
 /**
@@ -34,6 +36,50 @@ public class DateTime extends Date {
         calendar.setTimeInMillis(epochTime);
         hour = calendar.get(Calendar.HOUR_OF_DAY);
         minute = calendar.get(Calendar.MINUTE);
+    }
+
+    /**
+     * Determines whether this DateTime is before to other DateTime param
+     * @param other DateTime to compare this DateTime to
+     * @return true if this DateTime is before to other DateTime param, false otherwise
+     */
+    public boolean isBefore(DateTime other) {
+        if (getYear() < other.getYear()) {
+            return true;
+        } else if (getYear() > other.getYear()) {
+            return false;
+        }
+
+        if (getMonth() < other.getMonth()) {
+            return true;
+        } else if (getMonth() > other.getMonth()) {
+            return false;
+        }
+
+        if (getDay() < other.getDay()) {
+            return true;
+        } else if (getDay() > other.getDay()) {
+            return false;
+        }
+
+        if (getHour() < other.getHour()) {
+            return true;
+        } else if (getHour() > other.getHour()) {
+            return false;
+        }
+
+        return getMinute() < other.getMinute();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        if (obj instanceof DateTime) {
+            DateTime other = (DateTime) obj;
+            return getYear() == other.getYear() && getMonth() == other.getMonth()
+                    && getDay() == other.getDay() && getHour() == other.getHour()
+                    && getMinute() == other.getMinute();
+        }
+        return false;
     }
 
     /**

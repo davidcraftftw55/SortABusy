@@ -32,6 +32,7 @@ import me.codecritter.sortabusy.DateTime;
 import me.codecritter.sortabusy.R;
 import me.codecritter.sortabusy.Schedule;
 import me.codecritter.sortabusy.TimeBlock;
+import me.codecritter.sortabusy.TimeBlockDisplayer;
 import me.codecritter.sortabusy.util.CalendarHelper;
 import me.codecritter.sortabusy.view.DraggableButton;
 
@@ -39,7 +40,7 @@ import me.codecritter.sortabusy.view.DraggableButton;
  * The Main Activity for this app is the Schedule Maker, where user will be able to edit their
  * schedule on a given day; they should also be able to navigate to the other pages from this activity
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TimeBlockDisplayer {
 
     private static final String[] HOURS_TEXT = {"12am", "1am", "2am", "3am", "4am", "5am", "6am",
             "7am", "8am", "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm",
@@ -95,6 +96,9 @@ public class MainActivity extends AppCompatActivity {
         return (int) ((epochTime + timezoneOffset) % 86400000L / 3600000F * HOUR_HEIGHT + TOP_PADDING);
     }
 
+    private int displayWidth;
+    private int displayHeight;
+
     private ArrayList<DraggableButton> buttons;
     private Schedule schedule;
     private boolean editModeEnabled;
@@ -113,17 +117,17 @@ public class MainActivity extends AppCompatActivity {
         params.height = HOUR_HEIGHT * 24;
         view.setLayoutParams(params);
         findViewById(R.id.displayBackground).post(() -> {
-            int width = view.getWidth();
-            int height = view.getHeight();
-            drawScheduleMaker(view, width, height);
+            displayWidth = view.getWidth();
+            displayHeight = view.getHeight();
+            drawScheduleMaker(view);
 
             schedule = new Schedule(selectedDate);
-            displaySchedule(width, height);
+            displaySchedule();
 
             findViewById(R.id.scheduleDisplay).setOnTouchListener((display, event) -> {
                 if (editModeEnabled && event.getAction() == MotionEvent.ACTION_UP
                         && event.getEventTime() - event.getDownTime() < 250L) {
-                    addNewTimeBlock(convertYToTime((int) event.getY()), width, height);
+                    addNewTimeBlock(convertYToTime((int) event.getY()));
                     display.performClick(); // really just to silence the warning
                 }
                 return true;
@@ -206,35 +210,42 @@ public class MainActivity extends AppCompatActivity {
             clearSchedule();
             selectedDate = selectedDate.getYesterday();
             schedule = new Schedule(selectedDate);
-            displaySchedule(view.getWidth(), view.getHeight());
+            displaySchedule();
         });
 
         findViewById(R.id.nextDayButton).setOnClickListener(button -> {
             clearSchedule();
             selectedDate = selectedDate.getTomorrow();
             schedule = new Schedule(selectedDate);
-            displaySchedule(view.getWidth(), view.getHeight());
+            displaySchedule();
         });
     }
 
-    private void addNewTimeBlock(long startTime, int width, int height) {
+    @Override
+    public void onTimeBlockMoved() {
+        calculateOverlap();
+    }
+
+    private void addNewTimeBlock(long startTime) {
         long start = startTime / 1800000 * 1800000; // clever trick to round to lower 30 min mark
         DateTime eventStart = new DateTime(start);
         DateTime eventEnd = new DateTime(start + 3600000);
         TimeBlock newEvent = new TimeBlock(-1, "", eventStart, eventEnd);
         schedule.getSchedule().add(newEvent);
-        int index = addTimeBlock(width, height, newEvent);
+        int index = addTimeBlock(newEvent);
+        calculateOverlap();
 
         // and open up EventDetails so the name can be set
         eventDetailsLauncher.launch(new EventDetails(index, "", true));
     }
 
-    private void displaySchedule(int width, int height) {
+    private void displaySchedule() {
         ((TextView) findViewById(R.id.dayDisplay)).setText(selectedDate.getDayName());
         CalendarHelper.getInstance(this).loadSchedule(this, schedule);
         for (TimeBlock event : schedule.getSchedule()) {
-            addTimeBlock(width, height, event);
+            addTimeBlock(event);
         }
+        calculateOverlap();
     }
 
     private void clearSchedule() {
@@ -255,13 +266,36 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private int addTimeBlock(int width, int height, TimeBlock event) {
+    private void calculateOverlap() {
+        int[] column = new int[buttons.size()];
+        int columnCount = 1;
+        for (int i = 0; i < buttons.size(); i++) {
+            for (int j = i + 1; j < buttons.size(); j++) {
+                if (buttons.get(i).getEvent().isOverlapping(buttons.get(j).getEvent())) {
+                    if (column[j] == column[i]) {
+                        column[j] = column[i] + 1;
+                        columnCount = Math.max(columnCount, column[i] + 2);
+                    }
+                }
+            }
+        }
+
+        int columnWidth = (displayWidth - HOUR_TEXT_WIDTH) / columnCount;
+        for (int i = 0; i < buttons.size(); i++) {
+            ViewGroup.LayoutParams layoutParams = buttons.get(i).getLayoutParams();
+            layoutParams.width = columnWidth;
+            buttons.get(i).setLayoutParams(layoutParams);
+            buttons.get(i).setX(columnWidth * column[i] + HOUR_TEXT_WIDTH);
+        }
+    }
+
+    private int addTimeBlock(TimeBlock event) {
         float start = event.getStart().getHour() + (event.getStart().getMinute() / 60F);
         float end = event.getEnd().getHour() + (event.getEnd().getMinute() / 60F);
-        DraggableButton button = new DraggableButton(this, event,
-                findViewById(R.id.scrollView), height, HOUR_HEIGHT / 4, TOP_PADDING,
+        DraggableButton button = new DraggableButton(this, event, this,
+                findViewById(R.id.scrollView), displayHeight, HOUR_HEIGHT / 4, TOP_PADDING,
                 editModeEnabled);
-        button.setLayoutParams(new ViewGroup.LayoutParams(width - HOUR_TEXT_WIDTH,
+        button.setLayoutParams(new ViewGroup.LayoutParams(displayWidth - HOUR_TEXT_WIDTH,
                 (int) ((end - start) * HOUR_HEIGHT)));
         button.setTextSize(10);
         button.setPadding(50, 10, 0, 0);
@@ -279,8 +313,8 @@ public class MainActivity extends AppCompatActivity {
         return index;
     }
 
-    private void drawScheduleMaker(ImageView view, int width, int height) {
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+    private void drawScheduleMaker(ImageView view) {
+        Bitmap bitmap = Bitmap.createBitmap(displayWidth, displayHeight, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
         // draw borders
@@ -288,10 +322,10 @@ public class MainActivity extends AppCompatActivity {
         border.setColor(Color.BLACK);
         border.setStyle(Paint.Style.STROKE);
         border.setStrokeWidth(4);
-        canvas.drawLine(0F, 0F, width, 0F, border); // top border
-        canvas.drawLine(0F, 0F, 0F, height, border); // left border
-        canvas.drawLine(width, 0F, width, height, border); // right border
-        canvas.drawLine(0F, height, width, height, border); // bottom border
+        canvas.drawLine(0F, 0F, displayWidth, 0F, border); // top border
+        canvas.drawLine(0F, 0F, 0F, displayHeight, border); // left border
+        canvas.drawLine(displayWidth, 0F, displayWidth, displayHeight, border); // right border
+        canvas.drawLine(0F, displayHeight, displayWidth, displayHeight, border); // bottom border
 
         // draw hour lines
         Paint lines = new Paint();
@@ -301,7 +335,8 @@ public class MainActivity extends AppCompatActivity {
         lines.setStrokeWidth(8);
         lines.setAntiAlias(true);
         for (int i = 0; i < HOUR_HEIGHT - 1; i++) {
-            canvas.drawLine(HOUR_TEXT_WIDTH, HOUR_HEIGHT * i + TOP_PADDING, width, HOUR_HEIGHT * i + TOP_PADDING, lines);
+            canvas.drawLine(HOUR_TEXT_WIDTH, HOUR_HEIGHT * i + TOP_PADDING,
+                    displayWidth, HOUR_HEIGHT * i + TOP_PADDING, lines);
         }
 
         // type hour labels
