@@ -102,7 +102,7 @@ public class CalendarHelper {
         saveHandler.post(() -> {
             ArrayList<TimeBlock> events = schedule.getSchedule();
             for (TimeBlock event : events) {
-                if (event.isChanged()) {
+                if (event.isChanged() && !event.getName().isEmpty()) {
                     ContentValues values = new ContentValues();
                     values.put("title", event.getName());
                     values.put("dtstart", event.getStart().getEpochTime());
@@ -118,10 +118,19 @@ public class CalendarHelper {
                     }
                     event.markAsUpdated();
                 }
-                // TASK add block for if event was deleted
             }
             saveHandler.sendEmptyMessage(0);
         });
+    }
+
+    /**
+     * Deletes event from CalendarContract (to which phone will remove from GoogleCalendar)
+     * @param context context needed
+     * @param event TimeBlock containing the attributes of the event to delete
+     */
+    public void deleteEvent(Context context, TimeBlock event) {
+        context.getContentResolver().delete(ContentUris.withAppendedId(
+                CalendarContract.Events.CONTENT_URI, event.getEventId()), null, null);
     }
 
     /**

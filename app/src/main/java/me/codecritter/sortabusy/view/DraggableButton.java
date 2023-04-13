@@ -9,8 +9,6 @@ import android.widget.ScrollView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatButton;
 
-import java.util.Calendar;
-
 import me.codecritter.sortabusy.DateTime;
 import me.codecritter.sortabusy.TimeBlock;
 import me.codecritter.sortabusy.activity.MainActivity;
@@ -60,18 +58,18 @@ public class DraggableButton extends AppCompatButton {
      * @param minHeight minimum height of this button
      *                  (should be 15 minutes, or 1/4 of the space between hour lines)
      * @param yOffset y coordinate of the top most block for this button
+     * @param editMode true if editMode is currently enabled, and button can immediately start being
+     *                 dragged, false otherwise
      */
     public DraggableButton(@NonNull Context context, TimeBlock event, ScrollView parent,
-                           int parentHeight, int minHeight, int yOffset) {
+                           int parentHeight, int minHeight, int yOffset, boolean editMode) {
         super(context);
-
         this.event = event;
         this.parent = parent;
         PARENT_HEIGHT = parentHeight;
         MIN_HEIGHT = minHeight;
         Y_OFFSET = yOffset;
-
-        editMode = false;
+        this.editMode = editMode;
     }
 
     @Override
@@ -148,8 +146,6 @@ public class DraggableButton extends AppCompatButton {
                                 event.setEnd(new DateTime(MainActivity.convertYToTime(getContext(), (int) (getY() + getHeight()))));
                                 break;
                         }
-                        Calendar debug = Calendar.getInstance();
-                        debug.setTimeInMillis(MainActivity.convertYToTime(getContext(), (int) getY()));
                     }
                     break;
             }
@@ -164,6 +160,14 @@ public class DraggableButton extends AppCompatButton {
         } else {
             return y + (MIN_HEIGHT - mod);
         }
+    }
+
+    /**
+     * Getter method for the event variable
+     * @return TimeBlock object that corresponds to the event this represents
+     */
+    public TimeBlock getEvent() {
+        return event;
     }
 
     /**

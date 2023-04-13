@@ -1,18 +1,23 @@
 package me.codecritter.sortabusy.activity;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.ToggleButton;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContract;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 
@@ -20,6 +25,7 @@ import java.util.ArrayList;
 import java.util.TimeZone;
 
 import me.codecritter.sortabusy.Date;
+import me.codecritter.sortabusy.DateTime;
 import me.codecritter.sortabusy.R;
 import me.codecritter.sortabusy.Schedule;
 import me.codecritter.sortabusy.TimeBlock;
@@ -41,10 +47,24 @@ public class MainActivity extends AppCompatActivity {
     private static final int HOUR_TEXT_MARGIN = 80;
     private static final int HOUR_TEXT_TOP_PADDING = 26;
 
+    static class EventDetails {
+        private int index;
+        private String title;
+        private boolean newEvent;
+        private boolean deleted;
+        private EventDetails() {}
+        private EventDetails(int index, String title, boolean newEvent) {
+            this.index = index;
+            this.title = title;
+            this.newEvent = newEvent;
+        }
+    }
+
     /**
      * Translates the y coordinate into a time of day, according to the format of this Schedule Maker
+     *
      * @param context context needed
-     * @param y y coordinate to translate
+     * @param y       y coordinate to translate
      * @return time (in milliseconds since the epoch) that the y coordinate corresponds to
      */
     public static long convertYToTime(Context context, int y) {
@@ -55,6 +75,8 @@ public class MainActivity extends AppCompatActivity {
 
     private ArrayList<DraggableButton> buttons;
     private Schedule schedule;
+    private boolean editModeEnabled;
+    private ActivityResultLauncher<EventDetails> eventDetailsLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,37 +95,118 @@ public class MainActivity extends AppCompatActivity {
             int height = view.getHeight();
             drawScheduleMaker(view, width, height);
 
-            ScrollView scrollView = findViewById(R.id.scrollView);
             schedule = new Schedule(new Date());
-            displaySchedule(scrollView, width, height, schedule);
+            displaySchedule(width, height, schedule);
+
+            findViewById(R.id.scheduleDisplay).setOnTouchListener((display, event) -> {
+                if (editModeEnabled && event.getAction() == MotionEvent.ACTION_UP
+                        && event.getEventTime() - event.getDownTime() < 250L) {
+                    addNewTimeBlock(convertYToTime(this, (int) event.getY()), width, height);
+                    display.performClick(); // really just to silence the warning
+                }
+                return true;
+            });
         });
 
         findViewById(R.id.editModeToggle).setOnClickListener(editMode -> {
-            boolean isEditingNow = ((ToggleButton) editMode).isChecked();
+            editModeEnabled = ((ToggleButton) editMode).isChecked();
             for (DraggableButton button : buttons) {
-                button.setEditMode(isEditingNow);
+                button.setEditMode(editModeEnabled);
             }
 
-            if (!isEditingNow) {
+            if (!editModeEnabled) {
                 CalendarHelper.getInstance(this).saveSchedule(this, schedule);
             }
         });
+
+        eventDetailsLauncher = registerForActivityResult(
+                new ActivityResultContract<EventDetails, EventDetails>() {
+                    @NonNull
+                    @Override
+                    public Intent createIntent(@NonNull Context context, EventDetails input) {
+                        Intent intent = new Intent(getContext(), me.codecritter.sortabusy.activity.EventDetails.class);
+                        intent.putExtra("EVENT_INDEX", input.index);
+                        intent.putExtra("EVENT_TITLE", input.title);
+                        if (input.newEvent) {
+                            intent.putExtra("EVENT_NEW", true);
+                        }
+                        return intent;
+                    }
+
+                    @Override
+                    public EventDetails parseResult(int resultCode, @Nullable Intent intent) {
+                        if (intent != null) {
+                            EventDetails result = new EventDetails();
+                            int index = intent.getIntExtra("EVENT_INDEX", -1);
+                            String title = intent.getStringExtra("EVENT_TITLE");
+                            if (index != -1) {
+                                result.index = index;
+                                result.title = title;
+                                result.newEvent = intent.hasExtra("EVENT_NEW");
+                                result.deleted = intent.hasExtra("EVENT_DELETED");
+                                return result;
+                            }
+                        }
+                        return null;
+                    }
+                },
+                result -> {
+                    if (result != null) {
+                        DraggableButton button = buttons.get(result.index);
+                        if (!result.deleted) {
+                            if (result.title != null && !result.title.isEmpty()) {
+                                button.getEvent().setName(result.title);
+                                button.setText(result.title);
+                            } else {
+                                if (result.newEvent) {
+                                    buttons.remove(result.index);
+                                    schedule.getSchedule().remove(button.getEvent());
+                                    ((RelativeLayout) findViewById(R.id.scheduleDisplay)).removeView(button);
+                                }
+                            }
+                        } else {
+                            if (button.getEvent().getEventId() != -1) {
+                                CalendarHelper.getInstance(this).deleteEvent(this,
+                                        button.getEvent());
+                            }
+                            buttons.remove(result.index);
+                            schedule.getSchedule().remove(button.getEvent());
+                            ((RelativeLayout) findViewById(R.id.scheduleDisplay)).removeView(button);
+                        }
+                    }
+                });
     }
 
-    private void displaySchedule(ScrollView scrollView, int width, int height,
+    private Context getContext() {
+        return this;
+    }
+
+    private void addNewTimeBlock(long startTime, int width, int height) {
+        long start = startTime / 1800000 * 1800000; // clever trick to round to lower 30 min mark
+        DateTime eventStart = new DateTime(start);
+        DateTime eventEnd = new DateTime(start + 3600000);
+        TimeBlock newEvent = new TimeBlock(-1, "", eventStart, eventEnd);
+        schedule.getSchedule().add(newEvent);
+        int index = addTimeBlock(width, height, newEvent);
+
+        // and open up EventDetails so the name can be set
+        eventDetailsLauncher.launch(new EventDetails(index, "", true));
+    }
+
+    private void displaySchedule(int width, int height,
                                  Schedule schedule) {
         CalendarHelper.getInstance(this).loadSchedule(this, schedule);
         for (TimeBlock event : schedule.getSchedule()) {
-            addTimeBlock(scrollView, width, height, event);
+            addTimeBlock(width, height, event);
         }
     }
 
-    private void addTimeBlock(ScrollView scrollView, int width, int height,
-                              TimeBlock event) {
-        long start = event.getStart().getHour() + (event.getStart().getMinute() / 60);
-        long end = event.getEnd().getHour() + (event.getEnd().getMinute() / 60);
-        DraggableButton button = new DraggableButton(this, event, scrollView, height,
-                HOUR_HEIGHT / 4, TOP_PADDING);
+    private int addTimeBlock(int width, int height, TimeBlock event) {
+        float start = event.getStart().getHour() + (event.getStart().getMinute() / 60F);
+        float end = event.getEnd().getHour() + (event.getEnd().getMinute() / 60F);
+        DraggableButton button = new DraggableButton(this, event,
+                findViewById(R.id.scrollView), height, HOUR_HEIGHT / 4, TOP_PADDING,
+                editModeEnabled);
         button.setLayoutParams(new ViewGroup.LayoutParams(width - HOUR_TEXT_WIDTH,
                 (int) ((end - start) * HOUR_HEIGHT)));
         button.setTextSize(10);
@@ -112,9 +215,14 @@ public class MainActivity extends AppCompatActivity {
         button.setGravity(Gravity.TOP | Gravity.START);
         button.setAllCaps(false);
         button.setX(HOUR_TEXT_WIDTH);
-        button.setY(start * HOUR_HEIGHT + TOP_PADDING);
+        button.setY((int) (start * HOUR_HEIGHT + TOP_PADDING));
+
+        int index = buttons.size();
         buttons.add(button);
         ((RelativeLayout) findViewById(R.id.scheduleDisplay)).addView(button);
+        button.setOnClickListener(view ->
+                eventDetailsLauncher.launch(new EventDetails(index, event.getName(), false)));
+        return index;
     }
 
     private void drawScheduleMaker(ImageView view, int width, int height) {
