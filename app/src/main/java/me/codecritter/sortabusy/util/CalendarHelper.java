@@ -114,7 +114,7 @@ public class CalendarHelper {
                     } else {
                         context.getContentResolver().update(
                                 ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI,
-                                        event.getEventId()), values, null);
+                                        event.getEventId()), values, null, null);
                     }
                     event.markAsUpdated();
                 }
