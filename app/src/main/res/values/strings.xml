@@ -1,5 +1,16 @@
 <resources>
     <string name="app_name">SortABusy</string>
-    <string name="button">Button</string>
-    <string name="button_desc">Demo</string>
+
+    <string name="text_today">Today</string>
+    <string name="text_plus">+</string>
+    <string name="text_minus">-</string>
+    <string name="text_edit_mode">Edit Mode</string>
+    <string name="text_title">title</string>
+    <string name="text_save">Save</string>
+    <string name="text_delete">Delete</string>
+
+    <string name="desc_left_arrow">left arrow</string>
+    <string name="desc_right_arrow">right arrow</string>
+    <string name="desc_bg_notches">labeled hour notches</string>
+    <string name="desc_zoom">zoom icon</string>
 </resources>

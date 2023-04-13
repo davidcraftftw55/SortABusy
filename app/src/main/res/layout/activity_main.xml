@@ -15,11 +15,14 @@
             android:layout_marginTop="0dp"
             android:layout_alignParentTop="true">
 
-        <Button
+        <ImageView
                 android:id="@+id/prevDayButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="left"
+                android:src="@drawable/arrow_left"
+                android:contentDescription="@string/desc_left_arrow"
+                android:scaleX="1.5"
+                android:scaleY="1.5"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintLeft_toLeftOf="parent"
@@ -29,19 +32,22 @@
                 android:id="@+id/dayDisplay"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Today"
-                android:textSize="28sp"
+                android:text="@string/text_today"
+                android:textSize="30sp"
                 android:textStyle="bold"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintLeft_toRightOf="@id/prevDayButton"
                 app:layout_constraintRight_toLeftOf="@id/nextDayButton" />
 
-        <Button
+        <ImageView
                 android:id="@+id/nextDayButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="right"
+                android:src="@drawable/arrow_right"
+                android:contentDescription="@string/desc_right_arrow"
+                android:scaleX="1.5"
+                android:scaleY="1.5"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintLeft_toRightOf="@id/dayDisplay"
@@ -76,7 +82,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         style="@style/BackgroundImageView"
-                        android:contentDescription="background hour notches" />
+                        android:contentDescription="@string/desc_bg_notches" />
 
 
 
@@ -94,21 +100,21 @@
                     android:layout_width="50dp"
                     android:layout_height="wrap_content"
                     android:textSize="24sp"
-                    android:text="+" />
+                    android:text="@string/text_plus" />
 
             <ImageView
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:scaleX="0.75"
                     android:scaleY="0.75"
-                    android:contentDescription="Zoom icon"
+                    android:contentDescription="@string/desc_zoom"
                     app:srcCompat="@drawable/zoom" />
 
             <Button
                     android:layout_width="50dp"
                     android:layout_height="wrap_content"
                     android:textSize="24sp"
-                    android:text="-" />
+                    android:text="@string/text_minus" />
 
         </LinearLayout>
 
@@ -127,8 +133,8 @@
                 android:id="@+id/editModeToggle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textOff="Edit Mode"
-                android:textOn="Edit Mode" />
+                android:textOff="@string/text_edit_mode"
+                android:textOn="@string/text_edit_mode" />
 
     </LinearLayout>
 
